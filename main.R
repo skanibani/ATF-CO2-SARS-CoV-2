@@ -15,13 +15,20 @@ set_airports <- import_airports %>%
 # Pas op read_csv denkt dat sommige dingen logical fields zijn
 import_CAPA_fleet <- read_csv("data/CAPA-fleet.csv", skip = 10)
 
+set_CAPA_fleet <- import_CAPA_fleet %>% 
+  select(`Tail/Registration Number`, starts_with("Engine"), starts_with("Aircraft")) %>% 
+  rename(Registration = `Tail/Registration Number`)
+      
 import_fuel_burn <- read_xlsx("data/aircraft-fuel-burn.xlsx")
 
 airport_distance_nm <- function(long_1, lat_1, long_2, lat_2) {
   distHaversine(c(long_1, lat_1), c(long_2, lat_2), r = 6378137) * 0.000539956803
 }
 
-set_flightlist_jan <- import_flightlist_jan %>%
+set_flightlist_jan_apr <- import_flightlist_jan %>%
+  bind_rows(import_flightlist_feb) %>% 
+  bind_rows(import_flightlist_mar) %>% 
+  bind_rows(import_flightlist_apr) %>% 
   filter(origin != destination) %>% 
   left_join(set_airports, by = c("origin" = "ICAO")) %>% 
   rename(Departure = origin, Arrival = destination) %>% 
@@ -36,13 +43,22 @@ set_flightlist_jan <- import_flightlist_jan %>%
          Arrival_Elevation) %>% 
   drop_na()
 
-tb_map <- tibble(long_1 = set_flightlist_jan$Departure_Long,
-                 lat_1 = set_flightlist_jan$Departure_Lat,
-                 long_2 = set_flightlist_jan$Arrival_Long,
-                 lat_2 = set_flightlist_jan$Arrival_Lat)
+tb_map <- tibble(long_1 = set_flightlist_jan_apr$Departure_Long,
+                 lat_1 = set_flightlist_jan_apr$Departure_Lat,
+                 long_2 = set_flightlist_jan_apr$Arrival_Long,
+                 lat_2 = set_flightlist_jan_apr$Arrival_Lat)
 
 # Purr
 set_distance <- pmap_dbl(tb_map, airport_distance_nm)
 
-set_flightlist_jan <- set_flightlist_jan %>% 
+set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   mutate(Distance = set_distance)
+
+CAPA_reg_aircraft_ICAO <- set_CAPA_fleet %>% 
+  select(Registration, `Aircraft Variant ICAO Code`) %>% 
+  drop_na()
+
+set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
+  inner_join(CAPA_reg_aircraft_ICAO, by = "Registration")
+
+write_csv(set_flightlist_jan_apr, "export/ATF-jan-apr-distance-aircraft.csv")
