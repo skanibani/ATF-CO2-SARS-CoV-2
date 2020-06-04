@@ -15,6 +15,8 @@ set_airports <- import_airports %>%
 # Pas op read_csv denkt dat sommige dingen logical fields zijn
 import_CAPA_fleet <- read_csv("data/CAPA-fleet.csv", skip = 10)
 
+import_EEA_fuel_burn <- read_xlsx("data/fuelburn.xlsx", sheet = 2)
+
 set_CAPA_fleet <- import_CAPA_fleet %>% 
   select(`Tail/Registration Number`, starts_with("Engine"), starts_with("Aircraft")) %>% 
   rename(Registration = `Tail/Registration Number`)
@@ -61,4 +63,4 @@ CAPA_reg_aircraft_ICAO <- set_CAPA_fleet %>%
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   inner_join(CAPA_reg_aircraft_ICAO, by = "Registration")
 
-write_csv(set_flightlist_jan_apr, "export/ATF-jan-apr-distance-aircraft.csv")
+# Hallo Youri
