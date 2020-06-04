@@ -63,4 +63,16 @@ CAPA_reg_aircraft_ICAO <- set_CAPA_fleet %>%
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   inner_join(CAPA_reg_aircraft_ICAO, by = "Registration")
 
-# Hallo Youri
+set_EEA_fuelburn <- import_EEA_fuel_burn %>% 
+  pivot_longer(-Type, names_to = "Distance[NM]", values_to = "Fuelburn[KG]") %>% 
+  mutate(`Distance[NM]` = as.numeric(`Distance[NM]`))
+
+calc_ready_stuff <- set_flightlist_jan_apr %>% 
+  filter(`Aircraft Variant ICAO Code` %in% c("B738")) %>% 
+  mutate(`Fuelburn[KG]` = ifelse(`Aircraft Variant ICAO Code` == "A320",
+                                 (176.16 * (`Distance` ** 2)) + (131.5 * `Distance`) + 1684.4,
+                                 (((4 ** -8) * (`Distance` ** 3)) - ((8 ** -5) * (`Distance` ** 2)) + (5.1854 * `Distance`) + 1404.8))) %>% 
+  mutate(`CO2[KG]` = (`Fuelburn[KG]`) * 3.16)
+
+
+(176.16 * (10 ** 2) + 131.5 * 10 + 1684.4) * 3.16
