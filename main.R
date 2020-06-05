@@ -64,15 +64,38 @@ set_flightlist_jan_apr <- set_flightlist_jan_apr %>%
   inner_join(CAPA_reg_aircraft_ICAO, by = "Registration")
 
 set_EEA_fuelburn <- import_EEA_fuel_burn %>% 
-  pivot_longer(-Type, names_to = "Distance[NM]", values_to = "Fuelburn[KG]") %>% 
-  mutate(`Distance[NM]` = as.numeric(`Distance[NM]`))
-
-calc_ready_stuff <- set_flightlist_jan_apr %>% 
-  filter(`Aircraft Variant ICAO Code` %in% c("B738")) %>% 
-  mutate(`Fuelburn[KG]` = ifelse(`Aircraft Variant ICAO Code` == "A320",
-                                 (176.16 * (`Distance` ** 2)) + (131.5 * `Distance`) + 1684.4,
-                                 ((-7.7899 * (`Distance` ** 3)) + (288.83 * (`Distance` ** 2)) - (274.7 * `Distance`) + 2139)) %>% 
-  mutate(`CO2[KG]` = (`Fuelburn[KG]`) * 3.16)
+  pivot_longer(-Type, names_to = "Distance", values_to = "Fuelburn") %>% 
+  mutate(`Distance` = as.numeric(`Distance`))
 
 
-(176.16 * (10 ** 2) + 131.5 * 10 + 1684.4) * 3.16
+func_fuelburn_model <- function(df) {
+  lm(`Fuelburn` ~ poly(`Distance`, 3, raw = TRUE), data = df)
+}
+
+set_EEA_fuelburn <- set_EEA_fuelburn %>% 
+  drop_na() %>% 
+  group_by(Type) %>% 
+  nest()
+
+calc_fuelburn <- set_EEA_fuelburn %>% 
+  mutate(Model = map(`data`, func_fuelburn_model))
+
+func_fuelburn <- function(lm, x) {
+  coef(lm)[[1]] + coef(lm)[[2]] * x + coef(lm)[[3]] * x + coef(lm)[[4]]
+}
+
+calc_CO2_jan_apr <- set_flightlist_jan_apr %>% 
+  inner_join(calc_fuelburn, by = c("Aircraft Variant ICAO Code" = "Type")) %>% 
+  mutate(Fuelburn = map2_dbl(Model, Distance, func_fuelburn)) %>% 
+  mutate(CO2 = Fuelburn * 3.16) %>% 
+  select(Date, Registration, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
+  rename(`Distance[NM]` = Distance, `Fuelburn[KG]` = Fuelburn, `CO2[KG]` = CO2)
+
+plot_1 <- calc_CO2_jan_apr %>% 
+  drop_na() %>% 
+  group_by(Date) %>% 
+  summarize(`Mean CO2[KG]` = mean(`CO2[KG]`)) %>% 
+  ggplot(aes(`Date`, `Mean CO2[KG]`)) +
+  geom_point()
+
+plot_1
