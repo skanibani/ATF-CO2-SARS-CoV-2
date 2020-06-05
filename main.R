@@ -18,7 +18,7 @@ import_CAPA_fleet <- read_csv("data/CAPA-fleet.csv", skip = 10)
 import_EEA_fuel_burn <- read_xlsx("data/fuelburn.xlsx", sheet = 2)
 
 set_CAPA_fleet <- import_CAPA_fleet %>% 
-  select(`Tail/Registration Number`, starts_with("Engine"), starts_with("Aircraft")) %>% 
+  select(`Tail/Registration Number`, `Role`, starts_with("Engine"), starts_with("Aircraft")) %>% 
   rename(Registration = `Tail/Registration Number`)
       
 import_fuel_burn <- read_xlsx("data/aircraft-fuel-burn.xlsx")
@@ -57,8 +57,8 @@ set_flightlist_jan_apr <- set_flightlist_jan_apr %>%
   mutate(Distance = set_distance)
 
 CAPA_reg_aircraft_ICAO <- set_CAPA_fleet %>% 
-  select(Registration, `Aircraft Variant ICAO Code`) %>% 
-  drop_na()
+  select(Registration, `Aircraft Variant ICAO Code`, `Role`) %>% 
+  drop_na(Registration, `Aircraft Variant ICAO Code`)
 
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   inner_join(CAPA_reg_aircraft_ICAO, by = "Registration")
@@ -88,14 +88,16 @@ calc_CO2_jan_apr <- set_flightlist_jan_apr %>%
   inner_join(calc_fuelburn, by = c("Aircraft Variant ICAO Code" = "Type")) %>% 
   mutate(Fuelburn = map2_dbl(Model, Distance, func_fuelburn)) %>% 
   mutate(CO2 = Fuelburn * 3.16) %>% 
-  select(Date, Registration, `Aircraft Variant ICAO Code`, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
+  select(Date, Registration, `Aircraft Variant ICAO Code`, Role, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
+  mutate(Role = as.factor(Role)) %>% 
   rename(`Aircraft ICAO` = `Aircraft Variant ICAO Code`, `Distance[NM]` = Distance, `Fuelburn[KG]` = Fuelburn, `CO2[KG]` = CO2)
 
 plot_1 <- calc_CO2_jan_apr %>% 
   drop_na() %>% 
-  group_by(Date) %>% 
-  summarize(`Mean CO2[KG]` = mean(`CO2[KG]`)) %>% 
-  ggplot(aes(`Date`, `Mean CO2[KG]`)) +
-  geom_point()
+  filter(Role %in% c("Military/Passenger/Trainer/Utility", "Corporate/Government")) %>% 
+  group_by(Date, Role) %>% 
+  summarize(`Cumulative CO2[KG]` = sum(`CO2[KG]`)) %>% 
+  ggplot(aes(`Date`, `Cumulative CO2[KG]`, group = Role, color = Role)) +
+  geom_smooth()
 
 plot_1
