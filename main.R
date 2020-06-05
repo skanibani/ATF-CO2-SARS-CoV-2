@@ -88,8 +88,8 @@ calc_CO2_jan_apr <- set_flightlist_jan_apr %>%
   inner_join(calc_fuelburn, by = c("Aircraft Variant ICAO Code" = "Type")) %>% 
   mutate(Fuelburn = map2_dbl(Model, Distance, func_fuelburn)) %>% 
   mutate(CO2 = Fuelburn * 3.16) %>% 
-  select(Date, Registration, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
-  rename(`Distance[NM]` = Distance, `Fuelburn[KG]` = Fuelburn, `CO2[KG]` = CO2)
+  select(Date, Registration, `Aircraft Variant ICAO Code`, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
+  rename(`Aircraft ICAO` = `Aircraft Variant ICAO Code`, `Distance[NM]` = Distance, `Fuelburn[KG]` = Fuelburn, `CO2[KG]` = CO2)
 
 plot_1 <- calc_CO2_jan_apr %>% 
   drop_na() %>% 
