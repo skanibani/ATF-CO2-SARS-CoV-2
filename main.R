@@ -94,7 +94,6 @@ calc_CO2_jan_apr <- set_flightlist_jan_apr %>%
 
 plot_1 <- calc_CO2_jan_apr %>% 
   drop_na() %>% 
-  filter(Role %in% c("Military/Passenger/Trainer/Utility", "Corporate/Government")) %>% 
   group_by(Date, Role) %>% 
   summarize(`Cumulative CO2[KG]` = sum(`CO2[KG]`)) %>% 
   ggplot(aes(`Date`, `Cumulative CO2[KG]`, group = Role, color = Role)) +
