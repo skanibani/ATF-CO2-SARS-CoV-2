@@ -71,7 +71,7 @@ calc_ready_stuff <- set_flightlist_jan_apr %>%
   filter(`Aircraft Variant ICAO Code` %in% c("B738")) %>% 
   mutate(`Fuelburn[KG]` = ifelse(`Aircraft Variant ICAO Code` == "A320",
                                  (176.16 * (`Distance` ** 2)) + (131.5 * `Distance`) + 1684.4,
-                                 (((4 ** -8) * (`Distance` ** 3)) - ((8 ** -5) * (`Distance` ** 2)) + (5.1854 * `Distance`) + 1404.8))) %>% 
+                                 ((-7.7899 * (`Distance` ** 3)) + (288.83 * (`Distance` ** 2)) - (274.7 * `Distance`) + 2139)) %>% 
   mutate(`CO2[KG]` = (`Fuelburn[KG]`) * 3.16)
 
 
