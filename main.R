@@ -3,6 +3,11 @@ library(readxl)
 library(lubridate)
 library(geosphere)
 
+library(future)
+library(furrr)
+
+plan(multiprocess)
+
 import_flightlist_jan <- read_csv("data/flightlist_20200101_20200131.csv")
 import_flightlist_feb <- read_csv("data/flightlist_20200201_20200229.csv")
 import_flightlist_mar <- read_csv("data/flightlist_20200301_20200331.csv")
@@ -51,7 +56,7 @@ tb_map <- tibble(long_1 = set_flightlist_jan_apr$Departure_Long,
                  lat_2 = set_flightlist_jan_apr$Arrival_Lat)
 
 # Purr
-set_distance <- pmap_dbl(tb_map, airport_distance_nm)
+set_distance <- future_pmap_dbl(tb_map, airport_distance_nm, .progress = TRUE)
 
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   mutate(Distance = set_distance)
@@ -78,7 +83,7 @@ set_EEA_fuelburn <- set_EEA_fuelburn %>%
   nest()
 
 calc_fuelburn <- set_EEA_fuelburn %>% 
-  mutate(Model = map(`data`, func_fuelburn_model))
+  mutate(Model = future_map(`data`, func_fuelburn_model))
 
 func_fuelburn <- function(lm, x) {
   coef(lm)[[1]] + coef(lm)[[2]] * x + coef(lm)[[3]] * x + coef(lm)[[4]]
@@ -86,7 +91,7 @@ func_fuelburn <- function(lm, x) {
 
 calc_CO2_jan_apr <- set_flightlist_jan_apr %>% 
   inner_join(calc_fuelburn, by = c("Aircraft Variant ICAO Code" = "Type")) %>% 
-  mutate(Fuelburn = map2_dbl(Model, Distance, func_fuelburn)) %>% 
+  mutate(Fuelburn = future_map2_dbl(Model, Distance, func_fuelburn)) %>% 
   mutate(CO2 = Fuelburn * 3.16) %>% 
   select(Date, Registration, `Aircraft Variant ICAO Code`, Role, Departure, Arrival, Distance, Fuelburn, CO2) %>% 
   mutate(Role = as.factor(Role)) %>% 
