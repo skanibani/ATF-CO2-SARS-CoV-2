@@ -68,16 +68,16 @@ set_flightlist_jan_apr <- import_flightlist_jan %>%
 #rename the collums to normal names
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
   rename(
-    Origin_name = name.x,
-    Origin_lat = latitude_deg.x,
-    Origin_long = longitude_deg.x,
-    Origin_elevation = elevation_ft.x,
-    Origin_continent = continent.x,
-    Destination_name = name.y,
-    Destination_lat = latitude_deg.y,
-    Destination_long = longitude_deg.y,
-    Destination_elevation = elevation_ft.y,
-    Destination_continent = continent.y)
+    Departure_name = name.x,
+    Departure_lat = latitude_deg.x,
+    Departure_long = longitude_deg.x,
+    Departure_elevation = elevation_ft.x,
+    Departure_continent = continent.x,
+    Arrival_name = name.y,
+    Arrival_lat = latitude_deg.y,
+    Arrival_long = longitude_deg.y,
+    Arrival_elevation = elevation_ft.y,
+    Arrival_continent = continent.y)
 
 #filter on flight to EU or from EU and filter out flight with the same destination as depature airpore
 set_flightlist_jan_apr <- set_flightlist_jan_apr %>% 
