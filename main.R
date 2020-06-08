@@ -119,23 +119,23 @@ Search_online <- missing_data %>%
 
 rows <- 1:nrow(missing_data)
 
-#webscrapping from planefinder.net
-map_df(rows, function(i) {
-  
-  cat(".")
-  
-  data <- read_html(Search_online$link[i])
-  
-  data.frame(a = html_text(html_nodes(data, ".value")[1]),
-             stringsAsFactors=FALSE)
-  
-}) -> Search_online$typecode.x
+# #webscrapping from planefinder.net
+# map_df(rows, function(i) {
+#   
+#   cat(".")
+#   
+#   data <- read_html(Search_online$link[i])
+#   
+#   data.frame(a = html_text(html_nodes(data, ".value")[1]),
+#              stringsAsFactors=FALSE)
+#   
+# }) -> Search_online$typecode.x
 
-Callsign_online <- Search_online %>% 
-  mutate(Unknown = ifelse(typecode.x$aircraft == "N/A", NA, typecode.x$aircraft)) %>% 
-  select(callsign, Unknown)
-
-write.csv(Callsign_online, file = "data/Callsign_online.csv")
+# Callsign_online <- Search_online %>% 
+#   mutate(Unknown = ifelse(typecode.x$aircraft == "N/A", NA, typecode.x$aircraft)) %>% 
+#   select(callsign, Unknown)
+# 
+# write.csv(Callsign_online, file = "data/Callsign_online.csv")
 
 
 
